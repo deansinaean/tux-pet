@@ -137,62 +137,20 @@ impl VideoPlayer {
         }
     }
 
-    fn soft_matte(rgba: &mut [u8], reference_g: u8, width: u32, height: u32) {
-        let dist_threshold: f64 = 80.0;
+    fn soft_matte(rgba: &mut [u8], reference_g: u8, _width: u32, _height: u32) {
+        let dist_threshold: f64 = 30.0;
         let rg = reference_g as f64;
-        let w = width as usize;
-        let h = height as usize;
 
-        // First pass: classify each pixel as background (1) or foreground (0)
-        let mut mask: Vec<u8> = vec![0; rgba.len() / 4];
-        for (idx, m) in mask.iter_mut().enumerate() {
-            let i = idx * 4;
+        for i in (0..rgba.len()).step_by(4) {
             let r = rgba[i] as f64;
             let g = rgba[i + 1] as f64;
             let b = rgba[i + 2] as f64;
+
             let dist = (r * r + (g - rg) * (g - rg) + b * b).sqrt();
-            let is_bg = dist < dist_threshold && (rgba[i + 1] as u32) > (rgba[i] as u32) && (rgba[i + 1] as u32) > (rgba[i + 2] as u32);
-            *m = if is_bg { 1 } else { 0 };
-        }
 
-        // Second pass: hysteresis-like approach using neighborhood
-        // Pixels strongly connected to background become background
-        // Pixels strongly connected to foreground become foreground
-        let radius: i32 = 2;
-        let mut final_mask: Vec<u8> = mask.clone();
-
-        for y in 0..h {
-            for x in 0..w {
-                let idx = y * w + x;
-                let mut bg_count = 0;
-                let mut total = 0;
-                for dy in -radius..=radius {
-                    for dx in -radius..=radius {
-                        let nx = x as i32 + dx;
-                        let ny = y as i32 + dy;
-                        if nx >= 0 && nx < w as i32 && ny >= 0 && ny < h as i32 {
-                            let nidx = (ny as usize) * w + (nx as usize);
-                            bg_count += mask[nidx] as i32;
-                            total += 1;
-                        }
-                    }
-                }
-                let bg_ratio = bg_count as f64 / total as f64;
-                // If majority of neighbors are background, classify as background
-                // Otherwise (majority foreground OR near 50/50), classify as foreground
-                if bg_ratio > 0.5 {
-                    final_mask[idx] = 1;
-                } else {
-                    final_mask[idx] = 0;
-                }
-            }
-        }
-
-        // Apply: background pixels (mask=1) get all 4 channels zeroed
-        // Foreground pixels (mask=0) keep RGB and get alpha=255
-        for (idx, &m) in final_mask.iter().enumerate() {
-            let i = idx * 4;
-            if m == 1 {
+            // Only key out pixels that are very close to the reference green
+            // and are green-dominant. Cat pixels with any green contamination stay opaque.
+            if dist < dist_threshold && (g > r) && (g > b) {
                 rgba[i] = 0;
                 rgba[i + 1] = 0;
                 rgba[i + 2] = 0;
