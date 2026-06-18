@@ -1,0 +1,14 @@
+Source: tux-pet
+Section: games
+Priority: optional
+Maintainer: Tux Pet Developer <dev@tux-pet.local>
+Build-Depends: debhelper-compat (= 13), cargo, libcairo2-dev, libpango1.0-dev, libgtk-3-dev, libx11-dev, libxext-dev, libxrender-dev, libfreetype-dev, libpng-dev, libavcodec-dev, libavformat-dev, libswscale-dev, pkg-config
+Standards-Version: 4.6.0
+
+Package: tux-pet
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libcairo2, libx11-6, libavcodec58 | libavcodec60, libavformat58 | libavformat60, libswscale5 | libswscale6
+Description: A cute desktop pet for Linux
+ Tux Pet is a virtual pet that lives on your desktop.
+ It can walk, climb, jump, and interact with your windows.
+ Features include multiple characters, animations, and behaviors.

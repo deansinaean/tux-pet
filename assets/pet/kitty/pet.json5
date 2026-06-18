@@ -1,0 +1,35 @@
+{
+  name: "Kitty",
+  avatar: "avatar.png",
+  animations: [
+    { id: "idle",         name: "呆着",        type: "video", video_file: "idle.mp4" },
+    { id: "catch_butterfly",      name: "捉蝴蝶",         type: "video", video_file: "捉蝴蝶.mp4" },
+    { id: "lie_down",      name: "趴下",         type: "video", video_file: "趴下.mp4" },
+    { id: "run_away",      name: "跑开",         type: "video", video_file: "runaway.mp4" },
+    { id: "block",         name: "遮屏幕",        type: "video", video_file: "遮挡屏幕.mp4" },
+    { id: "give_fish",         name: "送鱼干",        type: "video", video_file: "give_fish.mp4" },
+    { id: "catch_butterfly2",      name: "跳捉蝴",         type: "video", video_file: "跳捉蝴.mp4" },
+  ],
+  rules: [
+    // 空闲时随机播放不同动画
+    { trigger_type: { type: "idle", min_ticks: 500, max_ticks: 2000 },
+      animation: "catch_butterfly", weight: 3.0, duration_ticks: 300 },
+    { trigger_type: { type: "idle", min_ticks: 800, max_ticks: 3000 },
+      animation: "lie_down", weight: 2.0, duration_ticks: 400 },
+    { trigger_type: { type: "idle", min_ticks: 1500, max_ticks: 5000 },
+      animation: "block", weight: 1.5, duration_ticks: 250 },
+    // 饥饿时送鱼
+    { trigger_type: { type: "state", state: "hunger", op: "gt", value: 70.0 },
+      animation: "give_fish", weight: 5.0, duration_ticks: 300, cooldown_ticks: 3000 },
+    // 精力低时趴下休息
+    { trigger_type: { type: "state", state: "energy", op: "lt", value: 30.0 },
+      animation: "lie_down", weight: 4.0, duration_ticks: 500, cooldown_ticks: 2000 },
+    // 晚上时间多趴着
+    { trigger_type: { type: "time", hour_start: 22, hour_end: 6 },
+      animation: "lie_down", weight: 3.0, duration_ticks: 600 },
+    // 随机小概率跳捉蝴蝶
+    { trigger_type: { type: "random", chance_per_tick: 0.0001 },
+      animation: "catch_butterfly2", weight: 2.0, duration_ticks: 200 },
+  ],
+}
+

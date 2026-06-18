@@ -1,0 +1,33 @@
+version: 1
+AppDir:
+  path: ./AppDir
+  app_info:
+    id: com.tux.pet
+    name: tux-pet
+    icon: tux-pet
+    version: 0.1.0
+    exec: usr/bin/tux-pet
+    exec_args: $@
+
+  files:
+    include:
+      - usr/bin/tux-pet
+      - usr/share/tux-pet/pet/*
+    exclude:
+      - usr/share/doc
+      - usr/share/man
+
+  test:
+    debian:
+      image: appimagecrafters/tests-env
+      command: "./AppRun"
+      use_host_x: true
+
+  runtime:
+    env:
+      TUX_ASSETS: "${APPDIR}/usr/share/tux-pet"
+
+AppImage:
+  update-information: None
+  sign-key: None
+  arch: x86_64

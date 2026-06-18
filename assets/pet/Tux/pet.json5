@@ -1,0 +1,8 @@
+{
+  name: "Tux",
+  avatar: "avatar.png",
+  animations: [
+    { id: "dance", name: "跳舞", type: "video", video_file: "跳舞.mp4" },
+    { id: "talk",  name: "说话", type: "video", video_file: "说话.mp4" },
+  ],
+}
