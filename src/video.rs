@@ -137,20 +137,63 @@ impl VideoPlayer {
         }
     }
 
-    fn soft_matte(rgba: &mut [u8], reference_g: u8, _width: u32, _height: u32) {
+    fn soft_matte(rgba: &mut [u8], reference_g: u8, width: u32, height: u32) {
         let dist_threshold: f64 = 60.0;
         let rg = reference_g as f64;
+        let w = width as usize;
+        let h = height as usize;
 
-        for i in (0..rgba.len()).step_by(4) {
+        // First pass: classify each pixel as background (1) or foreground (0)
+        let mut mask: Vec<u8> = vec![0; rgba.len() / 4];
+        for (idx, m) in mask.iter_mut().enumerate() {
+            let i = idx * 4;
             let r = rgba[i] as f64;
             let g = rgba[i + 1] as f64;
             let b = rgba[i + 2] as f64;
-
             let dist = (r * r + (g - rg) * (g - rg) + b * b).sqrt();
+            let is_bg = dist < dist_threshold && (rgba[i + 1] as u32) > (rgba[i] as u32) && (rgba[i + 1] as u32) > (rgba[i + 2] as u32);
+            *m = if is_bg { 1 } else { 0 };
+        }
 
-            // Only key out pixels that are very close to the reference green
-            // and are green-dominant. Cat pixels with any green contamination stay opaque.
-            if dist < dist_threshold && (g > r) && (g > b) {
+        // Second pass: dilate foreground (set pixels to FG if surrounded by FG neighbors)
+        // This fills small BG holes inside the foreground subject
+        let radius: i32 = 3;
+        let mut dilated = mask.clone();
+        for y in 0..h {
+            for x in 0..w {
+                let idx = y * w + x;
+                if mask[idx] == 1 {
+                    continue; // already background, skip
+                }
+                let mut fg_count = 0;
+                let mut total = 0;
+                for dy in -radius..=radius {
+                    for dx in -radius..=radius {
+                        let nx = x as i32 + dx;
+                        let ny = y as i32 + dy;
+                        if nx >= 0 && nx < w as i32 && ny >= 0 && ny < h as i32 {
+                            let nidx = (ny as usize) * w + (nx as usize);
+                            if mask[nidx] == 0 {
+                                fg_count += 1;
+                            }
+                            total += 1;
+                        }
+                    }
+                }
+                // If surrounded mostly by foreground, keep as foreground
+                let fg_ratio = fg_count as f64 / total as f64;
+                if fg_ratio > 0.7 {
+                    dilated[idx] = 0; // keep as foreground
+                } else {
+                    dilated[idx] = 1; // background
+                }
+            }
+        }
+
+        // Apply: background pixels (mask=1) get all 4 channels zeroed
+        for (idx, &m) in dilated.iter().enumerate() {
+            let i = idx * 4;
+            if m == 1 {
                 rgba[i] = 0;
                 rgba[i + 1] = 0;
                 rgba[i + 2] = 0;
