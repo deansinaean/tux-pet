@@ -155,10 +155,11 @@ impl VideoPlayer {
             *m = if is_bg { 1 } else { 0 };
         }
 
-        // Second pass: for each pixel, count background vs foreground in a 5x5 neighborhood
-        // alpha = (1 - bg_ratio) * 255
+        // Second pass: hysteresis-like approach using neighborhood
+        // Pixels strongly connected to background become background
+        // Pixels strongly connected to foreground become foreground
         let radius: i32 = 2;
-        let mut new_alpha = vec![0u8; rgba.len() / 4];
+        let mut final_mask: Vec<u8> = mask.clone();
 
         for y in 0..h {
             for x in 0..w {
@@ -177,16 +178,21 @@ impl VideoPlayer {
                     }
                 }
                 let bg_ratio = bg_count as f64 / total as f64;
-                // bg_ratio=1: fully background → alpha=0
-                // bg_ratio=0: fully foreground → alpha=255
-                new_alpha[idx] = ((1.0 - bg_ratio) * 255.0) as u8;
+                // If majority of neighbors are background, classify as background
+                // Otherwise (majority foreground OR near 50/50), classify as foreground
+                if bg_ratio > 0.5 {
+                    final_mask[idx] = 1;
+                } else {
+                    final_mask[idx] = 0;
+                }
             }
         }
 
-        // Apply: background pixels get all 4 channels zeroed, foreground pixels keep RGB
-        for (idx, &alpha) in new_alpha.iter().enumerate() {
+        // Apply: background pixels (mask=1) get all 4 channels zeroed
+        // Foreground pixels (mask=0) keep RGB and get alpha=255
+        for (idx, &m) in final_mask.iter().enumerate() {
             let i = idx * 4;
-            if alpha < 128 {
+            if m == 1 {
                 rgba[i] = 0;
                 rgba[i + 1] = 0;
                 rgba[i + 2] = 0;
