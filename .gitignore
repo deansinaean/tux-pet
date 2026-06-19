@@ -15,3 +15,6 @@ debian/debhelper*
 debian/*.substvars
 debian/tux-pet/
 debian/tux-pet-dbgsym/
+.idea/
+*.iml
+.vscode/

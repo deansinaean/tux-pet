@@ -222,6 +222,7 @@ fn kill_existing_instance() {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    shared::init_logging();
     tux_log!("[pet] starting...");
     let assets_dir = std::env::var("TUX_ASSETS").unwrap_or_else(|_| "not_set".to_string());
     tux_log!("[pet] TUX_ASSETS={}", assets_dir);

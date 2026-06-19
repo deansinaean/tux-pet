@@ -4,12 +4,52 @@ use std::path::{Path, PathBuf};
 
 static CHARACTERS_CACHE: OnceCell<Vec<CharacterDef>> = OnceCell::new();
 
+use std::sync::Mutex;
+pub static LOG_FILE: Mutex<Option<std::fs::File>> = Mutex::new(None);
+
+pub fn init_logging() {
+    let log_path = std::env::var("TUX_LOG")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|_| {
+            std::env::var("HOME")
+                .map(|h| std::path::PathBuf::from(h).join(".local/share/tux-pet/tux-pet.log"))
+                .unwrap_or_else(|_| std::path::PathBuf::from("/tmp/tux-pet.log"))
+        });
+    if let Some(parent) = log_path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    if let Ok(file) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&log_path)
+    {
+        *LOG_FILE.lock().unwrap() = Some(file);
+        eprintln!("[tux-pet] logging to {:?}", log_path);
+    }
+}
+
+pub fn write_log(msg: &str) {
+    eprintln!("{}", msg);
+    if let Some(ref mut f) = *LOG_FILE.lock().unwrap() {
+        use std::io::Write;
+        let _ = writeln!(f, "{}", msg);
+        let _ = f.flush();
+    }
+}
+
 macro_rules! tux_log {
-    ($($arg:tt)*) => {
-        eprintln!("[{:?}] {}", std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs_f64(),
-            format!($($arg)*))
-    };
+    ($($arg:tt)*) => {{
+        let msg = format!("[{:?}] {}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs_f64(),
+            format!($($arg)*));
+        eprintln!("{}", msg);
+        if let Some(ref mut f) = *shared::LOG_FILE.lock().unwrap() {
+            use std::io::Write;
+            let _ = writeln!(f, "{}", msg);
+            let _ = f.flush();
+        }
+    }};
 }
 
 
