@@ -99,20 +99,19 @@ impl SettingsWindow {
         Ok(Self { win, gc, depth, chars, sel_char: 0, sel_anim: 0, scale: 1.0, visible: false, dragging_slider: false, dragging: false, drag_x: 0, drag_y: 0, char_scroll: 0, anim_scroll: 0, font_face, preview_key: String::new(), preview_player: None, preview_surface: None, preview_frame_paths: vec![], preview_frame_idx: 0, preview_last_frame_time: None })
     }
 
-    pub fn show(&mut self, conn: &RustConnection, pet_x: f64, pet_y: f64, sc_w: i16, sc_h: i16) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn show(&mut self, conn: &RustConnection, cursor_x: f64, cursor_y: f64, sc_w: i16, sc_h: i16) -> Result<(), Box<dyn std::error::Error>> {
         self.visible = true;
-        let pet_right = pet_x as i32 + 200;
-        let pet_left = pet_x as i32 - 200;
-        let mut px: i32;
-        if pet_right + WIN_W as i32 + 20 < sc_w as i32 {
-            px = pet_right + 20;
-        } else if pet_left - WIN_W as i32 - 20 > 0 {
-            px = pet_left - WIN_W as i32 - 20;
-        } else {
-            px = (sc_w as i32 - WIN_W as i32 - 4).max(4);
+        let mut px = cursor_x as i32;
+        let mut py = cursor_y as i32;
+        if px + WIN_W as i32 + 20 > sc_w as i32 {
+            px = (cursor_x as i32 - WIN_W as i32 - 20).max(4);
         }
-        let py = 20i32;
+        if py + WIN_H as i32 + 20 > sc_h as i32 {
+            py = (cursor_y as i32 - WIN_H as i32 - 20).max(4);
+        }
         if px < 4 { px = 4; }
+        if py < 4 { py = 4; }
+        eprintln!("[pet] settings show at cursor=({},{}), final=({},{})", cursor_x, cursor_y, px, py);
         conn.configure_window(self.win, &ConfigureWindowAux::new().x(px).y(py))?;
         conn.map_window(self.win)?;
         conn.flush()?;
