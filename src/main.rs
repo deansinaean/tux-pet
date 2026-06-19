@@ -535,7 +535,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         if settings_win.visible {
                             settings_win.hide(&conn)?;
                         } else {
-                            settings_win.show(&conn, pet.x, pet.y, screen_w as i16, screen_h as i16)?;
+                            settings_win.show(&conn, ev.root_x as f64, ev.root_y as f64, screen_w as i16, screen_h as i16)?;
                         }
                     } else if ev.event == ctx_menu.win {
                         ctx_menu.hide(&conn)?;
