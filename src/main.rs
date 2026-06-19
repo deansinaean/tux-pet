@@ -52,7 +52,10 @@ fn start_dbus_watcher(surfaces: Arc<Mutex<Vec<Surface>>>, dirty: Arc<Mutex<bool>
         use zbus::blocking::{Connection as ZConn, MessageIterator};
         let conn = match ZConn::session() {
             Ok(c) => c,
-            Err(_) => return,
+            Err(e) => {
+                tux_log!("[pet] D-Bus session connection failed: {}", e);
+                return;
+            }
         };
         let rule = "type='signal',interface='org.tux.WindowTracker',member='WindowsChanged'";
         if conn.call_method(
@@ -61,7 +64,10 @@ fn start_dbus_watcher(surfaces: Arc<Mutex<Vec<Surface>>>, dirty: Arc<Mutex<bool>
             Some("org.freedesktop.DBus"),
             "AddMatch",
             &rule,
-        ).is_err() { return; }
+        ).is_err() {
+            tux_log!("[pet] D-Bus AddMatch failed - WindowTracker may not be available");
+            return;
+        }
 
         tux_log!("[pet] D-Bus WindowTracker watcher started");
 
@@ -409,10 +415,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let dbus_surfaces: Arc<Mutex<Vec<Surface>>> = Arc::new(Mutex::new(Vec::new()));
     let dbus_dirty: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
+    tux_log!("[pet] trying D-Bus WindowTracker...");
     let has_dbus = fetch_windows_dbus().map(|wins| {
         *dbus_surfaces.lock().unwrap() = wins;
         true
-    }).unwrap_or(false);
+    }).unwrap_or_else(|| {
+        tux_log!("[pet] D-Bus WindowTracker failed/unavailable");
+        false
+    });
 
     if has_dbus {
         tux_log!("[pet] using D-Bus WindowTracker for surfaces");
