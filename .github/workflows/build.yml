@@ -53,6 +53,11 @@ jobs:
           sudo apt-get install -y dpkg-dev fakeroot
           dpkg-buildpackage -us -uc -b
 
+      - name: Copy artifacts
+        run: |
+          cp ../*.deb . 2>/dev/null || true
+          ls -la *.deb *.AppImage 2>/dev/null || true
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
