@@ -159,7 +159,7 @@ impl VideoPlayer {
     }
 
     fn soft_matte(rgba: &mut [u8], target_cb: f64, target_cr: f64) {
-        let chroma_threshold: f64 = 40.0;
+        let chroma_threshold: f64 = 80.0;
 
         for i in (0..rgba.len()).step_by(4) {
             let r = rgba[i] as f64;
@@ -173,12 +173,11 @@ impl VideoPlayer {
             let dcr = cr - target_cr;
             let chroma_dist = (dcb * dcb + dcr * dcr).sqrt();
 
-            // Use only chroma (Cb, Cr) distance — independent of brightness.
-            // Pure green has very low Cb (around 43-45) and low Cr (around 22).
-            // Natural colors have Cb in 80-150 range, Cr in 130-180 range.
-            // This separates background from foreground reliably regardless of
-            // brightness or alpha blending at edges.
-            if chroma_dist < chroma_threshold {
+            // Combine chroma distance with green-dominance check.
+            // Pure green background: chroma_dist < 50 AND green-dominant
+            // Cat pixels with green edges: have non-zero R or B → fail green-dominant → kept
+            let g_dom = g > r && g > b;
+            if chroma_dist < chroma_threshold && g_dom {
                 rgba[i] = 0;
                 rgba[i + 1] = 0;
                 rgba[i + 2] = 0;
