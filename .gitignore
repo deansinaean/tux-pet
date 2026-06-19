@@ -3,5 +3,15 @@ target/
 squashfs-root/
 *.AppImage
 *.AppImage.zsync
+*.deb
+*.ddeb
+*.changes
+*.buildinfo
 appimage-build
 AppDir/.cache/
+debian/.debhelper/
+debian/files
+debian/debhelper*
+debian/*.substvars
+debian/tux-pet/
+debian/tux-pet-dbgsym/
