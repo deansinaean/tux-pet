@@ -480,7 +480,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 settings_win.sel_anim = i;
                                 if let Some(c) = shared::all_characters().get(settings_win.sel_char) {
                                     if let Some(a) = c.animations.get(i) {
-                                        config.lock().unwrap().animation = a.id.clone();
+                                        if characters.iter().find(|lc| lc.id == c.id).and_then(|lc| lc.animations.get(&a.id)).is_some() {
+                                            config.lock().unwrap().animation = a.id.clone();
+                                        } else {
+                                            tux_log!("[pet] rejected animation {} for {} - frame files not loaded", a.id, c.id);
+                                        }
                                     }
                                 }
                                 let _ = settings_win.render(&conn);
