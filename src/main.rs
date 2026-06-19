@@ -415,28 +415,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let dbus_surfaces: Arc<Mutex<Vec<Surface>>> = Arc::new(Mutex::new(Vec::new()));
     let dbus_dirty: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
-    tux_log!("[pet] trying D-Bus WindowTracker...");
-    let has_dbus = fetch_windows_dbus().map(|wins| {
-        *dbus_surfaces.lock().unwrap() = wins;
-        true
-    }).unwrap_or_else(|| {
-        tux_log!("[pet] D-Bus WindowTracker failed/unavailable");
-        false
-    });
+    let has_dbus = false;
 
-    if has_dbus {
-        tux_log!("[pet] using D-Bus WindowTracker for surfaces");
-        start_dbus_watcher(dbus_surfaces.clone(), dbus_dirty.clone());
-    } else {
-        tux_log!("[pet] D-Bus WindowTracker unavailable, using X11 scan");
-        conn.change_window_attributes(
-            screen.root,
-            &x11rb::protocol::xproto::ChangeWindowAttributesAux::new()
-                .event_mask(EventMask::SUBSTRUCTURE_NOTIFY),
-        )?;
-        conn.flush()?;
-        *dbus_surfaces.lock().unwrap() = scan_surfaces(&conn, screen.root, win);
-    }
+    tux_log!("[pet] using X11 scan for surfaces");
+    conn.change_window_attributes(
+        screen.root,
+        &x11rb::protocol::xproto::ChangeWindowAttributesAux::new()
+            .event_mask(EventMask::SUBSTRUCTURE_NOTIFY),
+    )?;
+    conn.flush()?;
+    *dbus_surfaces.lock().unwrap() = scan_surfaces(&conn, screen.root, win);
 
     let mut surfaces_dirty_at: Option<std::time::Instant> = None;
     const SURFACES_DEBOUNCE_MS: u64 = 200;
