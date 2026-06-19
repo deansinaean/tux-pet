@@ -46,6 +46,9 @@ pub struct SettingsWindow {
     pub scale: f64,
     pub visible: bool,
     pub dragging_slider: bool,
+    pub dragging: bool,
+    pub drag_x: i16,
+    pub drag_y: i16,
     pub char_scroll: usize,
     pub anim_scroll: usize,
     font_face: Option<cairo::FontFace>,
@@ -60,6 +63,8 @@ pub struct SettingsWindow {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Hit {
     Close,
+    DragTitle,
+    Exit,
     SelectChar(usize),
     SelectAnim(usize),
     Slider(f64),
@@ -91,15 +96,22 @@ impl SettingsWindow {
         let gc = conn.generate_id()?;
         conn.create_gc(gc, win, &CreateGCAux::new())?;
         let font_face = init_font_face();
-        Ok(Self { win, gc, depth, chars, sel_char: 0, sel_anim: 0, scale: 1.0, visible: false, dragging_slider: false, char_scroll: 0, anim_scroll: 0, font_face, preview_key: String::new(), preview_player: None, preview_surface: None, preview_frame_paths: vec![], preview_frame_idx: 0, preview_last_frame_time: None })
+        Ok(Self { win, gc, depth, chars, sel_char: 0, sel_anim: 0, scale: 1.0, visible: false, dragging_slider: false, dragging: false, drag_x: 0, drag_y: 0, char_scroll: 0, anim_scroll: 0, font_face, preview_key: String::new(), preview_player: None, preview_surface: None, preview_frame_paths: vec![], preview_frame_idx: 0, preview_last_frame_time: None })
     }
 
-    pub fn show(&mut self, conn: &RustConnection, x: i16, y: i16, sc_w: i16, sc_h: i16) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn show(&mut self, conn: &RustConnection, pet_x: f64, pet_y: f64, sc_w: i16, sc_h: i16) -> Result<(), Box<dyn std::error::Error>> {
         self.visible = true;
-        let mut px = x as i32;
-        let mut py = y as i32;
-        if py + WIN_H as i32 > sc_h as i32 { py = (y as i32 - WIN_H as i32 - 8).max(4); }
-        if px + WIN_W as i32 > sc_w as i32 { px = (sc_w as i32 - WIN_W as i32 - 4).max(4); }
+        let pet_right = pet_x as i32 + 200;
+        let pet_left = pet_x as i32 - 200;
+        let mut px: i32;
+        if pet_right + WIN_W as i32 + 20 < sc_w as i32 {
+            px = pet_right + 20;
+        } else if pet_left - WIN_W as i32 - 20 > 0 {
+            px = pet_left - WIN_W as i32 - 20;
+        } else {
+            px = (sc_w as i32 - WIN_W as i32 - 4).max(4);
+        }
+        let py = 20i32;
         if px < 4 { px = 4; }
         conn.configure_window(self.win, &ConfigureWindowAux::new().x(px).y(py))?;
         conn.map_window(self.win)?;
@@ -117,7 +129,14 @@ impl SettingsWindow {
 
     pub fn hide(&mut self, conn: &RustConnection) -> Result<(), Box<dyn std::error::Error>> {
         self.visible = false;
+        self.dragging = false;
         conn.unmap_window(self.win)?;
+        conn.flush()?;
+        Ok(())
+    }
+
+    pub fn move_to(&mut self, conn: &RustConnection, x: i32, y: i32) -> Result<(), Box<dyn std::error::Error>> {
+        conn.configure_window(self.win, &ConfigureWindowAux::new().x(x).y(y))?;
         conn.flush()?;
         Ok(())
     }
@@ -138,6 +157,8 @@ impl SettingsWindow {
 
     pub fn hit_test(&self, mx: f64, my: f64) -> Hit {
         if mx >= 8.0 && mx <= 60.0 && my >= 10.0 && my <= 38.0 { return Hit::Close; }
+        if my >= 10.0 && my <= 40.0 && mx >= 60.0 && mx <= WIN_W as f64 - 60.0 { return Hit::DragTitle; }
+        if my >= 10.0 && my <= 40.0 && mx >= WIN_W as f64 - 56.0 && mx <= WIN_W as f64 - 8.0 { return Hit::Exit; }
         if mx < LEFT_W && my >= CHAR_LIST_Y {
             let visible_chars = ((WIN_H as f64 - CHAR_LIST_Y) / CHAR_ROW_H).floor() as usize;
             for vi in 0..visible_chars {
@@ -186,6 +207,13 @@ impl SettingsWindow {
         ctx.set_source_rgba(1.0, 1.0, 1.0, 0.85);
         ctx.set_font_size(FONT);
         draw_centered(&ctx, "关闭", 34.0, 27.0);
+
+        ctx.set_source_rgba(0.9, 0.25, 0.25, 0.9);
+        rounded_rect(&ctx, WIN_W as f64 - 56.0, 10.0, 48.0, 26.0, 8.0);
+        ctx.fill()?;
+        ctx.set_source_rgba(1.0, 1.0, 1.0, 0.9);
+        ctx.set_font_size(FONT);
+        draw_centered(&ctx, "退出", WIN_W as f64 - 32.0, 27.0);
 
         ctx.set_source_rgba(1.0, 1.0, 1.0, 0.95);
         ctx.set_font_size(FONT + 3.0);

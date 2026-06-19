@@ -445,7 +445,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     let cur_scale = config.lock().unwrap().base_scale;
                                     settings_win.sel_char = cur_sel;
                                     settings_win.scale = cur_scale;
-                                    let _ = settings_win.show(&conn, ev.root_x, ev.root_y, screen_w as i16, screen_h as i16);
+                                    let _ = settings_win.show(&conn, pet.x, pet.y, screen_w as i16, screen_h as i16);
                                 }
                                 _ => {}
                             }
@@ -480,6 +480,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 settings_win.dragging_slider = true;
                                 let _ = settings_win.render(&conn);
                             }
+                            settings::Hit::DragTitle => {
+                                settings_win.dragging = true;
+                                settings_win.drag_x = ev.event_x;
+                                settings_win.drag_y = ev.event_y;
+                            }
+                            settings::Hit::Exit => {
+                                should_quit = true;
+                            }
                             settings::Hit::None => {}
                         }
                     } else if menu_visible {
@@ -502,13 +510,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
                 x11rb::protocol::Event::ButtonPress(ev) if ev.detail == 3 => {
-                    if ev.event == win {
-                        if menu_visible {
-                            ctx_menu.hide(&conn)?;
-                            menu_visible = false;
+                    if ev.event == win || ev.event == settings_win.win {
+                        if settings_win.visible {
+                            settings_win.hide(&conn)?;
                         } else {
-                            ctx_menu.show(&conn, ev.root_x, ev.root_y)?;
-                            menu_visible = true;
+                            settings_win.show(&conn, pet.x, pet.y, screen_w as i16, screen_h as i16)?;
                         }
                     } else if ev.event == ctx_menu.win {
                         ctx_menu.hide(&conn)?;
@@ -520,6 +526,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         save_pet_pos(pet.x, pet.y, config.lock().unwrap().base_scale);
                     }
                     settings_win.dragging_slider = false;
+                    settings_win.dragging = false;
                     if drag.take().is_some() {
                         if has_dbus {
                             if let Some(wins) = fetch_windows_dbus() {
@@ -546,6 +553,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         save_pet_pos(pet.x, pet.y, config.lock().unwrap().base_scale);
                     }
                 }
+                x11rb::protocol::Event::ButtonPress(ev) if ev.detail == 1 && settings_win.visible && ev.event == settings_win.win => {
+                    use settings::Hit;
+                    match settings_win.hit_test(ev.event_x as f64, ev.event_y as f64) {
+                        Hit::Close => {
+                            settings_win.hide(&conn)?;
+                        }
+                        Hit::Exit => {
+                            should_quit = true;
+                        }
+                        Hit::DragTitle => {
+                            settings_win.dragging = true;
+                            settings_win.drag_x = ev.event_x;
+                            settings_win.drag_y = ev.event_y;
+                        }
+                        Hit::Slider(frac) => {
+                            settings_win.scale = (frac * 9.7 + 0.3).clamp(0.3, 10.0);
+                            config.lock().unwrap().base_scale = settings_win.scale;
+                            settings_win.dragging_slider = true;
+                        }
+                        _ => {}
+                    }
+                }
                 x11rb::protocol::Event::MotionNotify(ev) => {
                     if settings_win.visible && settings_win.dragging_slider && ev.event == settings_win.win {
                         let slider_x = 12.0 + 130.0 + 1.0 + 16.0f64;
@@ -554,6 +583,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         settings_win.scale = (frac * 9.7 + 0.3).clamp(0.3, 10.0);
                         config.lock().unwrap().base_scale = settings_win.scale;
                         let _ = settings_win.render(&conn);
+                    } else if settings_win.visible && settings_win.dragging && ev.event == settings_win.win {
+                        settings_win.move_to(&conn, ev.root_x as i32 - settings_win.drag_x as i32, ev.root_y as i32 - settings_win.drag_y as i32)?;
                     } else if ev.event == ctx_menu.win {
                         let idx = ctx_menu.hit_test(ev.event_y);
                         ctx_menu.set_hovered(&conn, idx)?;
