@@ -363,6 +363,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut first_render = true;
     let mut drag: Option<(i16, i16, f64, f64)> = None;
     let mut last_input_shape: Option<(i16, i16, u16, u16)> = None;
+    let mut should_quit = false;
 
     let all_chars: Vec<_> = shared::all_characters().iter().map(|c| c.name.clone()).collect();
     let cur_char = config.lock().unwrap().character.clone();
@@ -420,6 +421,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         let tick_start = Instant::now();
 
+        if should_quit {
+            break;
+        }
+
         while let Some(event) = conn.poll_for_event()? {
             match event {
                 x11rb::protocol::Event::ButtonPress(ev) if ev.detail == 1 => {
@@ -429,7 +434,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         menu_visible = false;
                         if let Some(idx) = item_idx {
                             match ctx_menu.items[idx].id {
-                                "quit" => std::process::exit(0),
+                                "quit" => should_quit = true,
                                 "settings" => {
                                     menu_visible = false;
                                     ctx_menu.hide(&conn)?;
@@ -979,6 +984,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             thread::sleep(Duration::from_millis(TICK_MS) - elapsed);
         }
     }
+
+    save_pet_pos(pet.x, pet.y, config.lock().unwrap().base_scale);
+    shared::save_pet_state(&pet_state);
+    Ok(())
 }
 
 fn find_argb_visual(conn: &RustConnection, screen_num: usize) -> Option<(u8, u32)> {

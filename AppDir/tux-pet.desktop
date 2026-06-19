@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=tux-pet
+GenericName=Desktop Pet
+Comment=A cute desktop pet overlay
+Exec=tux-pet
+Icon=tux-pet
+Terminal=false
+Categories=Game;Utility;
+Keywords=pet;desktop;companion;
+StartupNotify=false
