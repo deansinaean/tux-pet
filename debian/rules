@@ -6,7 +6,7 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 	dh $@
 
 override_dh_auto_build:
-	cargo build --release
+	@echo "Binary already built, skipping cargo build"
 
 override_dh_auto_test:
 	true

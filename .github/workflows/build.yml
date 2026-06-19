@@ -43,7 +43,7 @@ jobs:
 
       - name: Build deb
         run: |
-          sudo apt-get install -y dpkg-dev
+          sudo apt-get install -y dpkg-dev fakeroot
           dpkg-buildpackage -us -uc -b
 
       - name: Upload artifacts
