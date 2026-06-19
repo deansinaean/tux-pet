@@ -703,10 +703,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        let current_anim_def = shared::all_characters()
+        let mut current_anim_def = shared::all_characters()
             .iter()
             .find(|c| c.id == current_config.character)
             .and_then(|c| c.animations.iter().find(|a| a.id == current_config.animation));
+
+        if current_anim_def.is_none() {
+            tux_log!("[pet] animation {} not found for {}, falling back to idle", current_config.animation, current_config.character);
+            if let Some(c) = shared::all_characters().iter().find(|c| c.id == current_config.character) {
+                if let Some(first_anim) = c.animations.first() {
+                    config.lock().unwrap().animation = first_anim.id.clone();
+                    current_anim_def = Some(first_anim);
+                }
+            }
+        }
 
         let behavior = current_anim_def
             .map(|a| &a.behavior)
