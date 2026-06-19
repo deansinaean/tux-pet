@@ -1,2 +1,4 @@
 target/release/tux-pet usr/bin
 assets/pet usr/share/tux-pet
+debian/tux-pet.desktop usr/share/applications
+assets/tux.png usr/share/icons/hicolor/256x256/apps/tux-pet.png

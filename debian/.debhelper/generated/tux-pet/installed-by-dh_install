@@ -1,2 +1,4 @@
 ./target/release/tux-pet
 ./assets/pet
+./debian/tux-pet.desktop
+./assets/tux.png
