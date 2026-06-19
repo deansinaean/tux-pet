@@ -290,6 +290,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     conn.create_pixmap(depth, backing, win, initial_size, initial_size)?;
     let mut cur_win_w: u16 = initial_size;
     let mut cur_win_h: u16 = initial_size;
+    let mut last_win_x: i32 = -9999;
+    let mut last_win_y: i32 = -9999;
 
     let characters = load_all_characters();
     let saved_state = load_pet_pos();
@@ -900,7 +902,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             last_input_shape = None;
                         }
 
-                        conn.configure_window(win, &ConfigureWindowAux::new().x(win_x).y(win_y))?;
+                        if win_x != last_win_x || win_y != last_win_y {
+                            conn.configure_window(win, &ConfigureWindowAux::new().x(win_x).y(win_y))?;
+                            last_win_x = win_x;
+                            last_win_y = win_y;
+                        }
                         put_rgba_image(&conn, backing, gc, rgba, depth, vid_w as u16, vid_h as u16)?;
                         conn.copy_area(backing, win, gc, 0, 0, 0, 0, vid_w as u16, vid_h as u16)?;
                         if last_input_shape.is_none() {
@@ -963,9 +969,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let win_x = (pet.x as i32 - render_w as i32 / 2).clamp(-(render_w as i32), screen_w);
         let win_y = (pet.y as i32 + PET_H as i32 - render_h as i32).clamp(-(render_h as i32), screen_h - render_h as i32);
 
-        conn.configure_window(win, &ConfigureWindowAux::new()
-            .x(win_x)
-            .y(win_y))?;
+        if win_x != last_win_x || win_y != last_win_y {
+            conn.configure_window(win, &ConfigureWindowAux::new()
+                .x(win_x)
+                .y(win_y))?;
+            last_win_x = win_x;
+            last_win_y = win_y;
+        }
 
         let rendered = render_svg(frame_data, render_w, render_h);
         put_rgba_image(&conn, backing, gc, &rendered, depth, render_w as u16, render_h as u16)?;
