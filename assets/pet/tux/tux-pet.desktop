@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=tux-pet
+Comment=Desktop Pet
+Exec=tux-pet
+Icon=tux-pet
+Type=Application
+Categories=Utility;

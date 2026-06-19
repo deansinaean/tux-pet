@@ -18,9 +18,12 @@ debs:
 	bash build-debs.sh
 
 appimage: build
-	mkdir -p AppDir/usr/bin AppDir/usr/share/tux-pet
+	mkdir -p AppDir/usr/bin AppDir/usr/share/tux-pet AppDir/usr/share/icons/hicolor/256x256/apps
 	cp target/release/tux-pet AppDir/usr/bin/
 	cp -r assets/pet AppDir/usr/share/tux-pet/
+	cp assets/pet/Tux/avatar.png AppDir/usr/share/icons/hicolor/256x256/apps/tux-pet.png
+	cp assets/pet/Tux/avatar.png AppDir/tux-pet.png
+	cp assets/pet/tux/tux-pet.desktop AppDir/tux-pet.desktop
 	appimage-builder --recipe AppImageBuilder.yml
 
 install: build
