@@ -159,7 +159,7 @@ impl VideoPlayer {
     }
 
     fn soft_matte(rgba: &mut [u8], target_cb: f64, target_cr: f64) {
-        let chroma_threshold: f64 = 80.0;
+        let chroma_threshold: f64 = 100.0;
 
         for i in (0..rgba.len()).step_by(4) {
             let r = rgba[i] as f64;
