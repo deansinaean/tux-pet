@@ -1,0 +1,66 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libfuse-dev libcairo2-dev libssl-dev libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxxf86vm-dev libxkbcommon-dev libpango1.0-dev libatk1.0-dev libgtk-3-dev freetype2-demos cmake
+
+      - name: Install appimage-builder
+        run: pip install appimage-builder
+
+      - name: Build Rust
+        run: cargo build --release
+
+      - name: Build AppImage
+        run: |
+          mkdir -p AppDir/usr/bin AppDir/usr/share/tux-pet AppDir/usr/share/icons/hicolor/256x256/apps
+          cp target/release/tux-pet AppDir/usr/bin/
+          cp -r assets/pet AppDir/usr/share/tux-pet/
+          cp assets/pet/Tux/avatar.png AppDir/usr/share/icons/hicolor/256x256/apps/tux-pet.png
+          cp assets/pet/Tux/avatar.png AppDir/tux-pet.png
+          cp assets/pet/tux/tux-pet.desktop AppDir/tux-pet.desktop 2>/dev/null || true
+          appimage-builder --recipe AppImageBuilder.yml --skip-tests
+
+      - name: Build deb
+        run: |
+          sudo apt-get install -y dpkg-dev
+          dpkg-buildpackage -us -uc -b
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-files
+          path: |
+            *.AppImage
+            *.deb
+            *.changes
+          retention-days: 30
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            *.AppImage
+            *.deb
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
