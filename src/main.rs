@@ -141,9 +141,12 @@ fn load_all_characters() -> Vec<LoadedCharacter> {
                         frames,
                         ticks_per_frame: *ticks_per_frame,
                     });
+                } else {
+                    tux_log!("[pet] skipped animation {} - failed to read frames: {:?}", anim_def.id, frame_paths);
                 }
             }
         }
+        tux_log!("[pet] loaded character {} with {} animations: {:?}", char_def.id, animations.len(), animations.keys().collect::<Vec<_>>());
         LoadedCharacter { id: char_def.id.clone(), animations }
     }).collect()
 }
