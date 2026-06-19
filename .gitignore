@@ -8,7 +8,7 @@ squashfs-root/
 *.changes
 *.buildinfo
 appimage-build
-AppDir/.cache/
+AppDir/
 debian/.debhelper/
 debian/files
 debian/debhelper*
