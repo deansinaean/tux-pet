@@ -1,2 +1,7 @@
 target/
 *.lock
+squashfs-root/
+*.AppImage
+*.AppImage.zsync
+appimage-build
+AppDir/.cache/
