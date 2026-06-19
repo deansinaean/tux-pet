@@ -41,7 +41,7 @@ impl ContextMenu {
                 .background_pixel(0)
                 .border_pixel(0)
                 .colormap(colormap)
-                .event_mask(EventMask::BUTTON_PRESS | EventMask::POINTER_MOTION | EventMask::LEAVE_WINDOW),
+                .event_mask(EventMask::BUTTON_PRESS | EventMask::BUTTON_RELEASE | EventMask::POINTER_MOTION | EventMask::LEAVE_WINDOW),
         )?;
         let gc = conn.generate_id()?;
         conn.create_gc(gc, win, &CreateGCAux::new())?;
