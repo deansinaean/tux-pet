@@ -1,0 +1,12 @@
+Package: tux-pet
+Version: 0.1.0-1
+Architecture: amd64
+Maintainer: Tux Pet Developer <dev@tux-pet.local>
+Installed-Size: 91510
+Depends: libavcodec62 (>= 7:8.0.1), libavformat62 (>= 7:8.0.1), libavutil60 (>= 7:8.0.1), libc6 (>= 2.43), libcairo2 (>= 1.6.0), libfreetype6 (>= 2.4.2), libgcc-s1 (>= 4.2), libswscale9 (>= 7:8.0.1), libx11-6, libavcodec58 | libavcodec60, libavformat58 | libavformat60, libswscale5 | libswscale6
+Section: games
+Priority: optional
+Description: A cute desktop pet for Linux
+ Tux Pet is a virtual pet that lives on your desktop.
+ It can walk, climb, jump, and interact with your windows.
+ Features include multiple characters, animations, and behaviors.

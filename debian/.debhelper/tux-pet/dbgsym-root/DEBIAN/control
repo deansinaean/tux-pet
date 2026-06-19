@@ -1,0 +1,13 @@
+Package: tux-pet-dbgsym
+Package-Type: ddeb
+Source: tux-pet
+Version: 0.1.0-1
+Auto-Built-Package: debug-symbols
+Architecture: amd64
+Maintainer: Tux Pet Developer <dev@tux-pet.local>
+Installed-Size: 1411
+Depends: tux-pet (= 0.1.0-1)
+Section: debug
+Priority: optional
+Description: debug symbols for tux-pet
+Build-Ids: eaa8930d231145d210a7f6e51f6cce7c52d71f79

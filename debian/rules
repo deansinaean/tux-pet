@@ -8,11 +8,6 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 override_dh_auto_build:
 	cargo build --release
 
-override_dh_auto_install:
-	install -Dm755 target/release/tux-pet $(CURDIR)/debian/tux-pet/usr/bin/tux-pet
-	mkdir -p $(CURDIR)/debian/tux-pet/usr/share/tux-pet
-	cp -r assets/pet $(CURDIR)/debian/tux-pet/usr/share/tux-pet/
-
 override_dh_auto_test:
 	true
 

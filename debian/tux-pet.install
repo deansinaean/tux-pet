@@ -1,2 +1,2 @@
-tux-pet usr/bin
+target/release/tux-pet usr/bin
 assets/pet usr/share/tux-pet
